@@ -18,12 +18,20 @@
         }
         .top-left { top: 20px; left: 20px; border-left: 2px solid #00f2ff; }
         .bottom-right { bottom: 20px; right: 20px; text-align: right; border-right: 2px solid #00f2ff; }
+        #alert-terminal {
+            position: absolute; top: 100px; right: 20px; width: 250px;
+            font-size: 9px; color: #ff3333; text-align: left;
+            background: rgba(255, 0, 0, 0.05); padding: 10px;
+            border-left: 1px solid #ff3333; display: none;
+            max-height: 400px; overflow: hidden;
+        }
         .glitch-text { animation: pulse 2s infinite; }
         @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
     </style>
 </head>
 <body>
     <div id="canvas-container"></div>
+    <div id="alert-terminal" id="syntactic-alerts"></div>
     <div id="hud-overlay">
         <div class="telemetry top-left">
             <div>System: Oracle v2.0.4</div>
@@ -88,6 +96,7 @@
             if(dissonance > 0.3) {
                 crystal.position.x = Math.sin(Date.now() * 0.05) * 0.02;
                 crystal.position.y = Math.cos(Date.now() * 0.05) * 0.02;
+                showSyntacticError();
             }
 
             // Pulsação de intensidade
@@ -95,6 +104,26 @@
             crystal.scale.set(scale, scale, scale);
 
             renderer.render(scene, camera);
+        }
+
+        function showSyntacticError() {
+            const terminal = document.getElementById('alert-terminal');
+            terminal.style.display = 'block';
+            if(Math.random() > 0.95) {
+                const errors = [
+                    "ERR 0x404: REALITY_MISMATCH",
+                    "KPI_05: DISSONANCE_CRITICAL",
+                    "NARRATIVE_DECOUPLING: 88%",
+                    "WARNING: ANCHOR_POINT_FAILURE",
+                    "QUANTUM_DRIFT_DETECTED",
+                    "KERNEL: SEMANTIC_CORRUPTION"
+                ];
+                const msg = document.createElement('div');
+                msg.style.marginBottom = '5px';
+                msg.innerText = `[${new Date().toLocaleTimeString()}] ${errors[Math.floor(Math.random()*errors.length)]}`;
+                terminal.prepend(msg);
+                if(terminal.childNodes.length > 10) terminal.lastChild.remove();
+            }
         }
 
         window.addEventListener('resize', () => {
