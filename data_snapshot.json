@@ -1,0 +1,19 @@
+{
+    "timestamp": "2026-05-24T07:49:51.115766",
+    "kpis": {
+        "centralidade_semantica": 105.0,
+        "consenso_narrativo": 0.55,
+        "indice_coerencia": 0.6,
+        "momentum_throughput": 82,
+        "dissonancia_mercado": 0.35,
+        "volatilidade_sentimento": 0.09818350166906861,
+        "sinais_fantasmas": 15,
+        "indicador_ancoragem": 0.8,
+        "pressao_direcional": -0.2,
+        "entropia_campo": 1.3709505944546687,
+        "densidade_conexoes": 124,
+        "taxa_sobrevivencia_lindy": 2.328767123287671
+    },
+    "morfologia_sugerida": "hedgehog",
+    "intensidade_tremor": 0.35
+}

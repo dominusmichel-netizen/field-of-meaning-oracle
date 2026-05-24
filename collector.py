@@ -1,7 +1,6 @@
 import os
 import json
 import datetime
-from hermes_tools import terminal, read_file
 from typing import List, Dict
 
 class SignalCollector:
