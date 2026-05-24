@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oracle v2 - Field of Meaning HUD</title>
+    <style>
+        body { margin: 0; background-color: #000; overflow: hidden; font-family: 'Courier New', Courier, monospace; color: #00f2ff; }
+        #canvas-container { width: 100vw; height: 100vh; }
+        #hud-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none; border: 1px solid rgba(0, 242, 255, 0.2);
+            box-sizing: border-box; background: radial-gradient(circle, transparent 60%, rgba(0, 20, 30, 0.8) 100%);
+        }
+        .telemetry {
+            position: absolute; padding: 20px; text-transform: uppercase; letter-spacing: 2px;
+            font-size: 10px; text-shadow: 0 0 5px #00f2ff;
+        }
+        .top-left { top: 20px; left: 20px; border-left: 2px solid #00f2ff; }
+        .bottom-right { bottom: 20px; right: 20px; text-align: right; border-right: 2px solid #00f2ff; }
+        .glitch-text { animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+    <div id="hud-overlay">
+        <div class="telemetry top-left">
+            <div>System: Oracle v2.0.4</div>
+            <div>Mode: Deep Meaning Analysis</div>
+            <div id="status-kpi" class="glitch-text">Scanning: NVIDIA_SN_20260524</div>
+        </div>
+        <div class="telemetry bottom-right">
+            <div>Dissonance Index: <span id="val-dissonance">0.35</span></div>
+            <div>Entropy Level: <span id="val-entropy">High</span></div>
+            <div>Status: Critical Path Detected</div>
+        </div>
+    </div>
+
+    <!-- Cdn do Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, crystal;
+        let points = [];
+        const KPI_COUNT = 12;
+
+        function init() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            // Criando a Geometria de Tensão (Teia 3D)
+            const geometry = new THREE.IcosahedronGeometry(2, 1);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x00f2ff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.3
+            });
+            crystal = new THREE.Mesh(geometry, material);
+            scene.add(crystal);
+
+            // Adicionando vértices de telemetria
+            const pointGeo = new THREE.SphereGeometry(0.05, 8, 8);
+            const pointMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
+            
+            for(let i = 0; i < geometry.vertices.length; i++) {
+                const p = new THREE.Mesh(pointGeo, pointMat);
+                p.position.copy(geometry.vertices[i]);
+                crystal.add(p);
+                points.push(p);
+            }
+
+            camera.position.z = 5;
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Lógica de "Tremor" baseada em Dissonância (KPI 5)
+            const dissonance = 0.35; 
+            crystal.rotation.y += 0.005;
+            crystal.rotation.x += 0.002;
+            
+            if(dissonance > 0.3) {
+                crystal.position.x = Math.sin(Date.now() * 0.05) * 0.02;
+                crystal.position.y = Math.cos(Date.now() * 0.05) * 0.02;
+            }
+
+            // Pulsação de intensidade
+            const scale = 1 + Math.sin(Date.now() * 0.002) * 0.05;
+            crystal.scale.set(scale, scale, scale);
+
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        init();
+    </script>
+</body>
+</html>
