@@ -46,16 +46,9 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <!-- Adicionando bibliotecas de efeitos avançados -->
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script>
-        let scene, camera, renderer, crystal, composer;
-        let points = [];
+        let scene, camera, renderer, crystal;
+        let ring1, ring2, ring3, core;
         let oracleData = { intensidade_tremor: 0, kpis: { dissonancia_mercado: 0 } };
 
         async function loadOracleData() {
@@ -65,70 +58,40 @@
                 document.getElementById('val-dissonance').innerText = oracleData.kpis.dissonancia_mercado.toFixed(2);
                 document.getElementById('val-entropy').innerText = oracleData.morfologia_sugerida;
             } catch (e) {
-                console.error("Aguardando dados do Oracle...", e);
+                console.error("Erro ao carregar dados", e);
             }
         }
 
         function init() {
             loadOracleData();
-            setInterval(loadOracleData, 5000); 
+            setInterval(loadOracleData, 5000);
             
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
-            renderer.toneMapping = THREE.ReinhardToneMapping;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // Efeitos de Bloom (Brilho Neon)
-            const renderScene = new THREE.RenderPass(scene, camera);
-            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
-            bloomPass.threshold = 0;
-            bloomPass.strength = 1.2;
-            bloomPass.radius = 0.5;
-
-            composer = new THREE.EffectComposer(renderer);
-            composer.addPass(renderScene);
-            composer.addPass(bloomPass);
-
-            // Interface 3D Aprimorada - Núcleo de Anéis (Estilo Jarvis)
             const ringGroup = new THREE.Group();
-            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true, transparent: true, opacity: 0.6 });
             
-            // Anel 1
-            const ring1 = new THREE.Mesh(new THREE.TorusGeometry(2, 0.05, 16, 100), ringMat);
+            ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.02, 16, 100), ringMat);
             ringGroup.add(ring1);
             
-            // Anel 2
-            const ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.03, 16, 100), ringMat);
+            ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.02, 16, 100), ringMat);
             ring2.rotation.x = Math.PI / 2;
             ringGroup.add(ring2);
             
-            // Anel 3
-            const ring3 = new THREE.Mesh(new THREE.TorusGeometry(1.2, 0.02, 16, 100), ringMat);
+            ring3 = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.01, 16, 100), ringMat);
             ring3.rotation.y = Math.PI / 4;
             ringGroup.add(ring3);
 
-            // Núcleo Central (Glow Core)
-            const coreGeo = new THREE.SphereGeometry(0.5, 32, 32);
-            const coreMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.9 });
-            const core = new THREE.Mesh(coreGeo, coreMat);
+            core = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00f2ff }));
             ringGroup.add(core);
 
-            crystal = ringGroup; // Substituindo a variável antiga pelo novo grupo
+            crystal = ringGroup;
             scene.add(crystal);
-
-            // Partículas de Fundo
-            const particlesGeometry = new THREE.BufferGeometry();
-            const particlesCount = 500;
-            const posArray = new Float32Array(particlesCount * 3);
-            for(let i=0; i < particlesCount * 3; i++) {
-                posArray[i] = (Math.random() - 0.5) * 10;
-            }
-            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            const particlesMaterial = new THREE.PointsMaterial({ size: 0.005, color: 0x00f2ff });
-            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
-            scene.add(particlesMesh);
 
             camera.position.z = 5;
             animate();
@@ -138,46 +101,35 @@
             requestAnimationFrame(animate);
             
             const tremorScale = oracleData.intensidade_tremor || 0.1;
-            
-            // Rotação diferenciada para vida ao HUD
-            crystal.children[0].rotation.z += 0.01;
-            crystal.children[1].rotation.x += 0.008;
-            crystal.children[2].rotation.y += 0.012;
+            ring1.rotation.z += 0.01;
+            ring2.rotation.x += 0.008;
+            ring3.rotation.y += 0.012;
             
             if(tremorScale > 0.3) {
-                crystal.position.x = Math.sin(Date.now() * 0.05) * (tremorScale * 0.05);
-                crystal.position.y = Math.cos(Date.now() * 0.05) * (tremorScale * 0.05);
+                crystal.position.x = Math.sin(Date.now() * 0.05) * 0.02;
+                crystal.position.y = Math.cos(Date.now() * 0.05) * 0.02;
                 showSyntacticError();
-            } else {
-                document.getElementById('alert-terminal').style.display = 'none';
             }
 
-            const scale = 1 + Math.sin(Date.now() * 0.002) * 0.03;
-            crystal.scale.set(scale, scale, scale);
-
-            composer.render();
+            renderer.render(scene, camera);
         }
 
+        function showSyntacticError() {
             const terminal = document.getElementById('alert-terminal');
             terminal.style.display = 'block';
-            if(Math.random() > 0.95) {
-                const errors = [
-                    "ERR 0x404: REALITY_MISMATCH",
-                    "KPI_05: DISSONANCE_CRITICAL",
-                    "NARRATIVE_DECOUPLING: 88%",
-                    "WARNING: ANCHOR_POINT_FAILURE",
-                    "QUANTUM_DRIFT_DETECTED",
-                    "KERNEL: SEMANTIC_CORRUPTION"
-                ];
-                const msg = document.createElement('div');
-                msg.style.marginBottom = '5px';
-                msg.innerText = `[${new Date().toLocaleTimeString()}] ${errors[Math.floor(Math.random()*errors.length)]}`;
-                terminal.prepend(msg);
-                if(terminal.childNodes.length > 10) terminal.lastChild.remove();
+            if(Math.random() > 0.98) {
+                const errors = ["CORE_ERR: DISSONANCE", "SYSTEM_OVERLOAD", "REALITY_SHIFT"];
+                terminal.innerHTML = `<div>[ALERT] ${errors[Math.floor(Math.random()*errors.length)]}</div>` + terminal.innerHTML;
             }
         }
 
         window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        init();
+    </script>
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
