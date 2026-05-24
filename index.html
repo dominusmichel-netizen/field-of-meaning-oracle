@@ -50,9 +50,23 @@
     <script>
         let scene, camera, renderer, crystal;
         let points = [];
-        const KPI_COUNT = 12;
+        let oracleData = { intensidade_tremor: 0, kpis: { dissonancia_mercado: 0 } };
+
+        async function loadOracleData() {
+            try {
+                const response = await fetch('data_snapshot.json');
+                oracleData = await response.json();
+                document.getElementById('val-dissonance').innerText = oracleData.kpis.dissonancia_mercado.toFixed(2);
+                document.getElementById('val-entropy').innerText = oracleData.morfologia_sugerida;
+            } catch (e) {
+                console.error("Aguardando dados do Oracle...", e);
+            }
+        }
 
         function init() {
+            loadOracleData();
+            setInterval(loadOracleData, 5000); // Atualiza a cada 5s
+            
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -88,15 +102,16 @@
         function animate() {
             requestAnimationFrame(animate);
             
-            // Lógica de "Tremor" baseada em Dissonância (KPI 5)
-            const dissonance = 0.35; 
+            const tremorScale = oracleData.intensidade_tremor || 0.1;
             crystal.rotation.y += 0.005;
             crystal.rotation.x += 0.002;
             
-            if(dissonance > 0.3) {
-                crystal.position.x = Math.sin(Date.now() * 0.05) * 0.02;
-                crystal.position.y = Math.cos(Date.now() * 0.05) * 0.02;
+            if(tremorScale > 0.3) {
+                crystal.position.x = Math.sin(Date.now() * 0.05) * (tremorScale * 0.1);
+                crystal.position.y = Math.cos(Date.now() * 0.05) * (tremorScale * 0.1);
                 showSyntacticError();
+            } else {
+                document.getElementById('alert-terminal').style.display = 'none';
             }
 
             // Pulsação de intensidade
