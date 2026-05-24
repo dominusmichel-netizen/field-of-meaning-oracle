@@ -3,37 +3,100 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ORACLE PROTOTYPE - FIELD OF MEANING</title>
+    <title>ORACLE v2.3 - FIELD OF MEANING</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: monospace; color: #00f2ff; height: 100vh; display: flex; align-items: center; justify-content: center; }
-        #hud { position: absolute; width:100%; height:100%; top:0; left:0; pointer-events:none; padding:20px; box-sizing:border-box; z-index:100; }
-        .tl { position: absolute; top: 20px; left: 20px; border-left: 2px solid #00f2ff; padding-left: 10px; font-size: 10px; }
-        .br { position: absolute; bottom: 40px; right: 40px; text-align: right; border-right: 2px solid #00f2ff; padding-right: 10px; font-size: 10px; }
-        .scene { width: 300px; height: 300px; perspective: 1000px; position: relative; }
-        .ring-group { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; animation: rotate 12s linear infinite; }
-        .ring { position: absolute; width: 100%; height: 100%; border: 4px dashed #00f2ff; border-radius: 50%; box-shadow: 0 0 30px #00f2ff; opacity: 0.9; }
-        .ring:nth-child(1) { transform: rotateX(75deg); }
-        .ring:nth-child(2) { transform: rotateY(75deg); }
-        .ring:nth-child(3) { transform: rotateZ(45deg) rotateX(45deg); }
-        .core { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 50px #00f2ff; transform: translate(-50%, -50%); animation: pulse 1.5s infinite; }
-        @keyframes rotate { from { transform: rotateY(0deg) rotateX(0deg) rotateZ(0deg); } to { transform: rotateY(360deg) rotateX(360deg) rotateZ(360deg); } }
-        @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; } 50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; } }
-        .tremor { animation: shake 0.15s infinite; }
-        @keyframes shake { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } 100% { transform: translate(2px, -2px); } }
+        :root { --main-cyan: #00f2ff; --alert-red: #ff3333; --bg-black: #00080a; }
+        body { margin: 0; background: var(--bg-black); overflow: hidden; font-family: 'Courier New', monospace; color: var(--main-cyan); height: 100vh; display: flex; align-items: center; justify-content: center; }
+        
+        #hud { position: absolute; width:100%; height:100%; top:0; left:0; pointer-events:none; padding:30px; box-sizing:border-box; z-index:100; border: 1px solid rgba(0, 242, 255, 0.1); }
+        .header { display: flex; justify-content: space-between; font-size: 12px; letter-spacing: 2px; }
+        .kpi-grid { position: absolute; left: 30px; top: 100px; display: grid; grid-template-columns: 1fr; gap: 15px; }
+        .kpi-card { border-left: 2px solid var(--main-cyan); padding-left: 10px; background: rgba(0, 242, 255, 0.05); width: 180px; }
+        .kpi-label { font-size: 8px; opacity: 0.7; }
+        .kpi-value { font-size: 16px; font-weight: bold; }
+        
+        .scene { width: 350px; height: 350px; perspective: 1000px; position: relative; }
+        .radar-3d { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; animation: rotate 20s linear infinite; }
+        
+        /* O Gráfico de Teia 3D (Membrana de Tensão) */
+        .axis { position: absolute; top: 50%; left: 50%; width: 150px; height: 1px; background: rgba(0, 242, 255, 0.3); transform-origin: left; }
+        .axis:nth-child(1) { transform: rotateY(0deg); }
+        .axis:nth-child(2) { transform: rotateY(60deg); }
+        .axis:nth-child(3) { transform: rotateY(120deg); }
+        .axis:nth-child(4) { transform: rotateX(90deg); }
+        .axis:nth-child(5) { transform: rotateX(-90deg); }
+        
+        .membrane {
+            position: absolute; top: 50%; left: 50%; width: 200px; height: 200px;
+            background: radial-gradient(circle, rgba(0,242,255,0.2) 0%, transparent 70%);
+            border: 1px solid var(--main-cyan); border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            transform: translate(-50%, -50%); animation: morph 4s ease-in-out infinite; box-shadow: 0 0 50px var(--main-cyan);
+        }
+
+        @keyframes rotate { from { transform: rotateY(0deg) rotateX(20deg); } to { transform: rotateY(360deg) rotateX(20deg); } }
+        @keyframes morph {
+            0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; transform: translate(-50%, -50%) scale(1); }
+            50% { border-radius: 50%; transform: translate(-50%, -50%) scale(1.1); box-shadow: 0 0 80px var(--alert-red); border-color: var(--alert-red); }
+        }
+
+        .tremor { animation: shake 0.1s infinite; }
+        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+        
+        #scanline { position: absolute; width: 100%; height: 2px; background: rgba(0, 242, 255, 0.1); top: 0; animation: scan 4s linear infinite; }
+        @keyframes scan { from { top: 0; } to { top: 100%; } }
     </style>
 </head>
 <body>
+    <div id="scanline"></div>
     <div id="hud">
-        <div class="tl">SYSTEM: ORACLE V2.2<br>TARGET: NVIDIA_CORP</div>
-        <div class="br">DISSONANCE: 0.35<br>STATUS: ANALYSIS_ACTIVE</div>
-    </div>
-    <div class="scene">
-        <div class="ring-group tremor">
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="ring"></div>
-            <div class="core"></div>
+        <div class="header">
+            <div>ORACLE V2.3 // FIELD OF MEANING</div>
+            <div>TARGET: NVIDIA_CORP // DATA_RAW: 2026.05.24</div>
+        </div>
+        
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-label">DISSONÂNCIA DE MERCADO</div>
+                <div class="kpi-value">0.35</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">ENTROPIA DO CAMPO</div>
+                <div class="kpi-value text-red">1.37</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">ÍNDICE DE ANCORAGEM</div>
+                <div class="kpi-value">0.80</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">SOBREVIVÊNCIA LINDY</div>
+                <div class="kpi-value">2.32</div>
+            </div>
+        </div>
+
+        <div style="position: absolute; bottom: 30px; left: 30px; font-size: 8px;">
+            [AUDIT_LOG]: Blackwell Demand Spike vs Consensus Dissonance detected.<br>
+            [STATUS]: HEGDEHOG MORPHOLOGY ACTIVE
         </div>
     </div>
+
+    <div class="scene">
+        <div class="radar-3d tremor">
+            <div class="axis"></div>
+            <div class="axis"></div>
+            <div class="axis"></div>
+            <div class="axis"></div>
+            <div class="axis"></div>
+            <div class="membrane"></div>
+        </div>
+    </div>
+
+    <script>
+        // Injeção de Dissonância Dinâmica
+        const ds = 0.35;
+        if(ds > 0.3) {
+            document.body.style.color = "#ff3333";
+            document.querySelectorAll('.kpi-card').forEach(c => c.style.borderColor = "#ff3333");
+        }
+    </script>
 </body>
 </html>
