@@ -3,133 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oracle v2 - Field of Meaning HUD</title>
+    <title>Oracle v2 - HUD</title>
     <style>
-        body { margin: 0; background-color: #000; overflow: hidden; font-family: 'Courier New', Courier, monospace; color: #00f2ff; }
-        #canvas-container { width: 100vw; height: 100vh; }
-        #hud-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; border: 1px solid rgba(0, 242, 255, 0.2);
-            box-sizing: border-box; background: radial-gradient(circle, transparent 60%, rgba(0, 20, 30, 0.8) 100%);
-        }
-        .telemetry {
-            position: absolute; padding: 20px; text-transform: uppercase; letter-spacing: 2px;
-            font-size: 10px; text-shadow: 0 0 5px #00f2ff;
-        }
-        .top-left { top: 20px; left: 20px; border-left: 2px solid #00f2ff; }
-        .bottom-right { bottom: 20px; right: 20px; text-align: right; border-right: 2px solid #00f2ff; }
-        #alert-terminal {
-            position: absolute; top: 100px; right: 20px; width: 250px;
-            font-size: 9px; color: #ff3333; text-align: left;
-            background: rgba(255, 0, 0, 0.05); padding: 10px;
-            border-left: 1px solid #ff3333; display: none;
-            max-height: 400px; overflow: hidden;
-        }
-        .glitch-text { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
+        body { margin: 0; background: #000; overflow: hidden; font-family: monospace; color: #00f2ff; }
+        #canvas-container { position: absolute; top:0; left:0; width:100%; height:100%; z-index: 1; }
+        #hud { position: absolute; width: 100%; height: 100%; z-index: 10; pointer-events: none; padding: 20px; box-sizing: border-box; }
+        .tl { position: absolute; top: 20px; left: 20px; border-left: 2px solid #00f2ff; padding-left: 10px; }
+        .br { position: absolute; bottom: 40px; right: 40px; text-align: right; border-right: 2px solid #00f2ff; padding-right: 10px; }
+        #alert { position: absolute; top: 100px; right: 20px; color: #ff3333; font-size: 10px; }
     </style>
 </head>
 <body>
     <div id="canvas-container"></div>
-    <div id="alert-terminal" id="syntactic-alerts"></div>
-    <div id="hud-overlay">
-        <div class="telemetry top-left">
-            <div>System: Oracle v2.0.4</div>
-            <div>Mode: Deep Meaning Analysis</div>
-            <div id="status-kpi" class="glitch-text">Scanning: NVIDIA_SN_20260524</div>
-        </div>
-        <div class="telemetry bottom-right">
-            <div>Dissonance Index: <span id="val-dissonance">0.35</span></div>
-            <div>Entropy Level: <span id="val-entropy">High</span></div>
-            <div>Status: Critical Path Detected</div>
-        </div>
+    <div id="hud">
+        <div class="tl">SYSTEM: ORACLE V2.1<br>SCANNING: NVIDIA_SN</div>
+        <div class="br">DISSONANCE: <span id="ds">0.35</span><br>STATUS: CRITICAL</div>
+        <div id="alert"></div>
     </div>
-
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        let scene, camera, renderer, crystal;
-        let ring1, ring2, ring3, core;
-        let oracleData = { intensidade_tremor: 0, kpis: { dissonancia_mercado: 0 } };
+        let scene, camera, renderer, rings = [];
+        let dissonance = 0.35;
 
-        async function loadOracleData() {
+        async function update() {
             try {
-                const response = await fetch('data_snapshot.json');
-                oracleData = await response.json();
-                document.getElementById('val-dissonance').innerText = oracleData.kpis.dissonancia_mercado.toFixed(2);
-                document.getElementById('val-entropy').innerText = oracleData.morfologia_sugerida;
-            } catch (e) {
-                console.error("Erro ao carregar dados", e);
-            }
+                const r = await fetch('data_snapshot.json');
+                const d = await r.json();
+                dissonance = d.kpis.dissonancia_mercado;
+                document.getElementById('ds').innerText = dissonance.toFixed(2);
+            } catch(e) {}
         }
 
         function init() {
-            loadOracleData();
-            setInterval(loadOracleData, 5000);
-            
             scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            const ringGroup = new THREE.Group();
-            const ringMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true, transparent: true, opacity: 0.6 });
+            const mat = new THREE.MeshBasicMaterial({ color: 0x00f2ff, wireframe: true, transparent: true, opacity: 0.6 });
             
-            ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.02, 16, 100), ringMat);
-            ringGroup.add(ring1);
-            
-            ring2 = new THREE.Mesh(new THREE.TorusGeometry(1.4, 0.02, 16, 100), ringMat);
-            ring2.rotation.x = Math.PI / 2;
-            ringGroup.add(ring2);
-            
-            ring3 = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.01, 16, 100), ringMat);
-            ring3.rotation.y = Math.PI / 4;
-            ringGroup.add(ring3);
-
-            core = new THREE.Mesh(new THREE.SphereGeometry(0.3, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00f2ff }));
-            ringGroup.add(core);
-
-            crystal = ringGroup;
-            scene.add(crystal);
-
-            camera.position.z = 5;
-            animate();
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            
-            const tremorScale = oracleData.intensidade_tremor || 0.1;
-            ring1.rotation.z += 0.01;
-            ring2.rotation.x += 0.008;
-            ring3.rotation.y += 0.012;
-            
-            if(tremorScale > 0.3) {
-                crystal.position.x = Math.sin(Date.now() * 0.05) * 0.02;
-                crystal.position.y = Math.cos(Date.now() * 0.05) * 0.02;
-                showSyntacticError();
+            for(let i=0; i<3; i++) {
+                const r = new THREE.Mesh(new THREE.TorusGeometry(1.5 - (i*0.4), 0.02, 16, 100), mat);
+                r.rotation.x = Math.random() * Math.PI;
+                r.rotation.y = Math.random() * Math.PI;
+                scene.add(r);
+                rings.push(r);
             }
 
+            const core = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), new THREE.MeshBasicMaterial({ color: 0x00f2ff }));
+            scene.add(core);
+
+            camera.position.z = 5;
+            loop();
+            setInterval(update, 5000);
+        }
+
+        function loop() {
+            requestAnimationFrame(loop);
+            rings.forEach((r, i) => {
+                r.rotation.z += 0.01 * (i+1);
+                r.rotation.x += 0.005;
+            });
+
+            if(dissonance > 0.3) {
+                scene.position.x = Math.sin(Date.now()*0.1)*0.02;
+                if(Math.random() > 0.98) {
+                    document.getElementById('alert').innerHTML = "SYSTEM_ERR: " + Math.random().toString(16).slice(2,8) + "<br>" + document.getElementById('alert').innerHTML;
+                }
+            }
             renderer.render(scene, camera);
         }
 
-        function showSyntacticError() {
-            const terminal = document.getElementById('alert-terminal');
-            terminal.style.display = 'block';
-            if(Math.random() > 0.98) {
-                const errors = ["CORE_ERR: DISSONANCE", "SYSTEM_OVERLOAD", "REALITY_SHIFT"];
-                terminal.innerHTML = `<div>[ALERT] ${errors[Math.floor(Math.random()*errors.length)]}</div>` + terminal.innerHTML;
-            }
-        }
-
         window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-        init();
-    </script>
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
