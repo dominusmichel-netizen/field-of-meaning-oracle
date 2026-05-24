@@ -3,45 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Oracle v2 - HUD</title>
+    <title>ORACLE PROTOTYPE - FIELD OF MEANING</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; font-family: monospace; color: #00f2ff; height: 100vh; display: flex; align-items: center; justify-content: center; }
         #hud { position: absolute; width:100%; height:100%; top:0; left:0; pointer-events:none; padding:20px; box-sizing:border-box; z-index:100; }
         .tl { position: absolute; top: 20px; left: 20px; border-left: 2px solid #00f2ff; padding-left: 10px; font-size: 10px; }
         .br { position: absolute; bottom: 40px; right: 40px; text-align: right; border-right: 2px solid #00f2ff; padding-right: 10px; font-size: 10px; }
-        
-        /* Motor CSS 3D Imune a Falhas de Navegador */
-        .scene { width: 200px; height: 200px; perspective: 600px; position: relative; }
-        .ring-group { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; animation: rotate 10s linear infinite; }
-        .ring {
-            position: absolute; width: 100%; height: 100%; border: 2px dashed #00f2ff;
-            border-radius: 50%; box-shadow: 0 0 15px #00f2ff; opacity: 0.7;
-        }
-        .ring:nth-child(1) { transform: rotateX(70deg) rotateY(0deg); }
-        .ring:nth-child(2) { transform: rotateX(0deg) rotateY(70deg); }
-        .ring:nth-child(3) { transform: rotateX(45deg) rotateY(45deg); }
-        .core {
-            position: absolute; top: 50%; left: 50%; width: 30px; height: 30px;
-            background: #00f2ff; border-radius: 50%; box-shadow: 0 0 30px #00f2ff;
-            transform: translate(-50%, -50%); animation: pulse 2s infinite;
-        }
-
-        @keyframes rotate { from { transform: rotateY(0deg) rotateX(0deg); } to { transform: rotateY(360deg) rotateX(360deg); } }
-        @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.8; } 50% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; } }
-        
-        #alert { position: absolute; top: 100px; right: 20px; color: #ff3333; font-size: 8px; text-align: right; }
-        .tremor { animation: shake 0.1s infinite; }
-        @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+        .scene { width: 300px; height: 300px; perspective: 1000px; position: relative; }
+        .ring-group { width: 100%; height: 100%; position: absolute; transform-style: preserve-3d; animation: rotate 12s linear infinite; }
+        .ring { position: absolute; width: 100%; height: 100%; border: 4px dashed #00f2ff; border-radius: 50%; box-shadow: 0 0 30px #00f2ff; opacity: 0.9; }
+        .ring:nth-child(1) { transform: rotateX(75deg); }
+        .ring:nth-child(2) { transform: rotateY(75deg); }
+        .ring:nth-child(3) { transform: rotateZ(45deg) rotateX(45deg); }
+        .core { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; background: #00f2ff; border-radius: 50%; box-shadow: 0 0 50px #00f2ff; transform: translate(-50%, -50%); animation: pulse 1.5s infinite; }
+        @keyframes rotate { from { transform: rotateY(0deg) rotateX(0deg) rotateZ(0deg); } to { transform: rotateY(360deg) rotateX(360deg) rotateZ(360deg); } }
+        @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; } 50% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; } }
+        .tremor { animation: shake 0.15s infinite; }
+        @keyframes shake { 0% { transform: translate(2px, 2px); } 50% { transform: translate(-2px, -2px); } 100% { transform: translate(2px, -2px); } }
     </style>
 </head>
 <body>
     <div id="hud">
-        <div class="tl">SYSTEM: ORACLE V2.2<br>SCANNING: NVIDIA_SN</div>
-        <div class="br">DISSONANCE: <span id="ds">0.35</span><br>STATUS: CRITICAL</div>
-        <div id="alert"></div>
+        <div class="tl">SYSTEM: ORACLE V2.2<br>TARGET: NVIDIA_CORP</div>
+        <div class="br">DISSONANCE: 0.35<br>STATUS: ANALYSIS_ACTIVE</div>
     </div>
-
-    <div class="scene" id="main-scene">
+    <div class="scene">
         <div class="ring-group tremor">
             <div class="ring"></div>
             <div class="ring"></div>
@@ -49,23 +35,5 @@
             <div class="core"></div>
         </div>
     </div>
-
-    <script>
-        // Lógica de dados sincronizada
-        async function update() {
-            try {
-                const r = await fetch('data_snapshot.json');
-                const d = await r.json();
-                document.getElementById('ds').innerText = d.kpis.dissonancia_mercado.toFixed(2);
-                if(d.kpis.dissonancia_mercado > 0.3) {
-                    if(Math.random() > 0.9) {
-                        document.getElementById('alert').innerHTML = "ERR: " + Math.random().toString(16).slice(2,6) + "<br>" + document.getElementById('alert').innerHTML;
-                    }
-                }
-            } catch(e) {}
-        }
-        setInterval(update, 5000);
-        update();
-    </script>
 </body>
 </html>
