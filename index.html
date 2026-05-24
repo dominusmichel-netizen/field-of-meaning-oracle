@@ -45,10 +45,16 @@
         </div>
     </div>
 
-    <!-- Cdn do Three.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Adicionando bibliotecas de efeitos avançados -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
     <script>
-        let scene, camera, renderer, crystal;
+        let scene, camera, renderer, crystal, composer;
         let points = [];
         let oracleData = { intensidade_tremor: 0, kpis: { dissonancia_mercado: 0 } };
 
@@ -65,35 +71,48 @@
 
         function init() {
             loadOracleData();
-            setInterval(loadOracleData, 5000); // Atualiza a cada 5s
+            setInterval(loadOracleData, 5000); 
             
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.toneMapping = THREE.ReinhardToneMapping;
             document.getElementById('canvas-container').appendChild(renderer.domElement);
 
-            // Criando a Geometria de Tensão (Teia 3D)
-            const geometry = new THREE.IcosahedronGeometry(2, 1);
+            // Efeitos de Bloom (Brilho Neon)
+            const renderScene = new THREE.RenderPass(scene, camera);
+            const bloomPass = new THREE.UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 1.5, 0.4, 0.85);
+            bloomPass.threshold = 0;
+            bloomPass.strength = 1.2;
+            bloomPass.radius = 0.5;
+
+            composer = new THREE.EffectComposer(renderer);
+            composer.addPass(renderScene);
+            composer.addPass(bloomPass);
+
+            // Interface 3D Aprimorada
+            const geometry = new THREE.IcosahedronGeometry(2, 2);
             const material = new THREE.MeshBasicMaterial({
                 color: 0x00f2ff,
                 wireframe: true,
                 transparent: true,
-                opacity: 0.3
+                opacity: 0.8
             });
             crystal = new THREE.Mesh(geometry, material);
             scene.add(crystal);
 
-            // Adicionando vértices de telemetria
-            const pointGeo = new THREE.SphereGeometry(0.05, 8, 8);
-            const pointMat = new THREE.MeshBasicMaterial({ color: 0x00f2ff });
-            
-            for(let i = 0; i < geometry.vertices.length; i++) {
-                const p = new THREE.Mesh(pointGeo, pointMat);
-                p.position.copy(geometry.vertices[i]);
-                crystal.add(p);
-                points.push(p);
+            // Partículas de Fundo
+            const particlesGeometry = new THREE.BufferGeometry();
+            const particlesCount = 500;
+            const posArray = new Float32Array(particlesCount * 3);
+            for(let i=0; i < particlesCount * 3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 10;
             }
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            const particlesMaterial = new THREE.PointsMaterial({ size: 0.005, color: 0x00f2ff });
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
 
             camera.position.z = 5;
             animate();
@@ -103,25 +122,23 @@
             requestAnimationFrame(animate);
             
             const tremorScale = oracleData.intensidade_tremor || 0.1;
-            crystal.rotation.y += 0.005;
-            crystal.rotation.x += 0.002;
+            crystal.rotation.y += 0.003;
+            crystal.rotation.x += 0.001;
             
             if(tremorScale > 0.3) {
-                crystal.position.x = Math.sin(Date.now() * 0.05) * (tremorScale * 0.1);
-                crystal.position.y = Math.cos(Date.now() * 0.05) * (tremorScale * 0.1);
+                crystal.position.x = Math.sin(Date.now() * 0.05) * (tremorScale * 0.05);
+                crystal.position.y = Math.cos(Date.now() * 0.05) * (tremorScale * 0.05);
                 showSyntacticError();
             } else {
                 document.getElementById('alert-terminal').style.display = 'none';
             }
 
-            // Pulsação de intensidade
-            const scale = 1 + Math.sin(Date.now() * 0.002) * 0.05;
+            const scale = 1 + Math.sin(Date.now() * 0.002) * 0.03;
             crystal.scale.set(scale, scale, scale);
 
-            renderer.render(scene, camera);
+            composer.render();
         }
 
-        function showSyntacticError() {
             const terminal = document.getElementById('alert-terminal');
             terminal.style.display = 'block';
             if(Math.random() > 0.95) {
